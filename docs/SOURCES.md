@@ -1,8 +1,22 @@
 # Evidence sources
 
-Last reviewed: 2026-09-19
+Last reviewed: 2026-09-20
 
 Peerivo GEO uses primary platform guidance as the highest external authority. Third-party AEO/GEO rulebooks remain advisory until a rule is independently reviewed and promoted into the Peerivo ruleset.
+
+## IndexNow
+
+- Protocol documentation: https://www.indexnow.org/documentation
+  - Submit URLs that were added, updated, or deleted.
+  - Keys are 8-128 characters and use letters, digits, and hyphens.
+  - Ownership is verified by a UTF-8 key file on the same host.
+  - Batch requests may contain up to 10,000 URLs.
+  - `200` is success; `202` is accepted with key validation pending; `400/403/422` are protocol/configuration errors; `429` is rate limiting.
+- Bing IndexNow setup: https://www.bing.com/indexnow/getstarted
+  - Microsoft recommends IndexNow for real-time URL notification.
+  - IndexNow does not guarantee crawl or indexing.
+- Bing sitemap guidance: https://blogs.bing.com/webmaster/July-2025/Keeping-Content-Discoverable-with-Sitemaps-in-AI-Powered-Search
+  - Sitemaps remain the comprehensive coverage mechanism; IndexNow complements them with URL-level freshness notifications.
 
 ## Google Search
 
