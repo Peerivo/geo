@@ -1,0 +1,17 @@
+{
+  "name": "@peerivo/geo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "peerivo-geo": "./src/cli.mjs"
+  },
+  "scripts": {
+    "audit": "node ./src/cli.mjs audit",
+    "test": "node --test",
+    "check": "node --check ./src/cli.mjs && node --check ./src/audit.mjs && node --check ./src/html.mjs && node --check ./src/robots.mjs && npm test"
+  }
+}
