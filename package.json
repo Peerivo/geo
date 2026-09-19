@@ -11,7 +11,8 @@
   },
   "scripts": {
     "audit": "node ./src/cli.mjs audit",
+    "indexnow": "node ./src/cli.mjs indexnow",
     "test": "node --test",
-    "check": "node --check ./src/cli.mjs && node --check ./src/audit.mjs && node --check ./src/html.mjs && node --check ./src/robots.mjs && npm test"
+    "check": "node --check ./src/cli.mjs && node --check ./src/audit.mjs && node --check ./src/html.mjs && node --check ./src/robots.mjs && node --check ./src/indexnow.mjs && node -e \"JSON.parse(require('fs').readFileSync('contracts/web-discovery.v1.schema.json','utf8'))\" && npm test"
   }
 }
