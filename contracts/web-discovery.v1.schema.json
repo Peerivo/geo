@@ -4,38 +4,211 @@
   "title": "Peerivo GEO Web Discovery Contract v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version", "profile", "canonicalHost"],
+  "required": [
+    "version",
+    "repository",
+    "profile",
+    "geoIntegration",
+    "checks"
+  ],
   "properties": {
-    "version": { "const": "peerivo-geo/web-discovery/v1" },
+    "version": {
+      "const": "peerivo-geo/web-discovery/v1"
+    },
+    "repository": {
+      "type": "string",
+      "pattern": "^Peerivo/[A-Za-z0-9_.-]+$"
+    },
     "profile": {
-      "enum": ["public_required", "public_limited", "restricted", "not_applicable"]
+      "enum": [
+        "public_required",
+        "public_limited",
+        "restricted",
+        "not_applicable"
+      ]
     },
     "canonicalHost": {
       "type": "string",
       "minLength": 1,
       "pattern": "^[A-Za-z0-9.-]+(?::[0-9]+)?$"
     },
+    "productionUrl": {
+      "type": "string",
+      "format": "uri"
+    },
+    "deployment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "enum": [
+            "vercel",
+            "railway",
+            "cloudflare",
+            "github_pages",
+            "other"
+          ]
+        },
+        "project": {
+          "type": "string",
+          "minLength": 1
+        },
+        "state": {
+          "enum": [
+            "production",
+            "preview_only",
+            "planned"
+          ]
+        }
+      }
+    },
+    "geoIntegration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "status"
+      ],
+      "properties": {
+        "repository": {
+          "const": "Peerivo/geo"
+        },
+        "status": {
+          "enum": [
+            "planned",
+            "integrating",
+            "active"
+          ]
+        },
+        "auditOnPullRequest": {
+          "type": "boolean",
+          "default": true
+        },
+        "auditOnProduction": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requiredMetricClasses"
+      ],
+      "properties": {
+        "requiredMetricClasses": {
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 1,
+          "items": {
+            "enum": [
+              "crawl",
+              "indexability",
+              "ai_discovery",
+              "metadata",
+              "canonicalization",
+              "structured_data",
+              "content_structure",
+              "rendering",
+              "internal_links",
+              "internationalization",
+              "accessibility",
+              "mobile",
+              "transport",
+              "security",
+              "freshness",
+              "field_performance",
+              "lab_performance",
+              "search_performance",
+              "ai_citation_referral"
+            ]
+          }
+        },
+        "failOn": {
+          "enum": [
+            "error",
+            "warning",
+            "none"
+          ],
+          "default": "error"
+        }
+      }
+    },
+    "fieldPerformance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "required": {
+          "type": "boolean",
+          "default": false
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "percentile": {
+          "const": 75
+        },
+        "formFactors": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "mobile",
+              "desktop"
+            ]
+          }
+        }
+      }
+    },
     "sitemap": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "url": { "type": "string", "format": "uri" },
-        "required": { "type": "boolean", "default": true }
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "required": {
+          "type": "boolean",
+          "default": true
+        }
       }
     },
     "indexNow": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["enabled"],
+      "required": [
+        "enabled"
+      ],
       "properties": {
-        "enabled": { "type": "boolean" },
-        "keyEnv": { "type": "string", "default": "INDEXNOW_KEY" },
-        "keyLocation": { "type": "string", "format": "uri" },
+        "enabled": {
+          "type": "boolean"
+        },
+        "keyEnv": {
+          "type": "string",
+          "default": "INDEXNOW_KEY"
+        },
+        "keyLocation": {
+          "type": "string",
+          "format": "uri"
+        },
         "triggers": {
           "type": "array",
-          "items": { "enum": ["created", "updated", "deleted"] },
+          "items": {
+            "enum": [
+              "created",
+              "updated",
+              "deleted"
+            ]
+          },
           "uniqueItems": true,
-          "default": ["created", "updated", "deleted"]
+          "default": [
+            "created",
+            "updated",
+            "deleted"
+          ]
         }
       }
     }
@@ -44,13 +217,51 @@
     {
       "if": {
         "properties": {
-          "profile": { "enum": ["restricted", "not_applicable"] }
+          "profile": {
+            "enum": [
+              "public_required",
+              "public_limited"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "canonicalHost"
+        ],
+        "properties": {
+          "geoIntegration": {
+            "properties": {
+              "auditOnPullRequest": {
+                "const": true
+              },
+              "auditOnProduction": {
+                "const": true
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "enum": [
+              "restricted",
+              "not_applicable"
+            ]
+          }
         }
       },
       "then": {
         "properties": {
           "indexNow": {
-            "properties": { "enabled": { "const": false } }
+            "properties": {
+              "enabled": {
+                "const": false
+              }
+            }
           }
         }
       }
