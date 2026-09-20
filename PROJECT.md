@@ -49,10 +49,12 @@ M1 implements `public_required`. Other profiles are reserved by the schema and m
 
 A consuming service declares:
 
-- contract version;
-- discovery profile;
-- canonical host;
-- sitemap configuration when applicable;
+- repository and discovery profile;
+- canonical host / production deployment when applicable;
+- canonical `Peerivo/geo` integration state;
+- required metric classes and failure threshold;
+- field-performance evidence policy;
+- sitemap configuration;
 - whether IndexNow is enabled;
 - the environment-variable name that contains the IndexNow key;
 - optional same-host key location;
@@ -90,9 +92,15 @@ Rules:
 - promote an external rule to a Peerivo blocking rule only through a reviewed rule-version change;
 - store any API key in Infisical and retrieve it through the approved CI identity path.
 
+## Metric model
+
+GEO does not collapse crawl eligibility, performance, accessibility, search analytics and AI citations into a synthetic score. It separates deterministic facts, field evidence, lab diagnostics and observational analytics. See `docs/METRICS.md`.
+
+Field Core Web Vitals use p75 evidence. Lab metrics may diagnose performance but may not be relabeled as field LCP/INP/CLS; INP is not treated as a direct lab measurement.
+
 ## Initial M1 checks
 
-The first executable audit focuses on high-confidence public-page eligibility and parseability:
+The executable audit covers high-confidence eligibility plus broader web-quality signals:
 
 - target URL is HTTP(S);
 - target returns a successful HTML response;
@@ -102,7 +110,10 @@ The first executable audit focuses on high-confidence public-page eligibility an
 - H1/description/canonical/lang/main-content checks are warnings, not ranking claims;
 - present JSON-LD must parse;
 - page should expose meaningful text in the fetched HTML rather than only an empty client shell;
-- sitemap presence is reported but is not an unconditional hard requirement.
+- HTTPS is required for a public-required final URL;
+- viewport, Open Graph, image alt coverage, hreflang observation and security headers are reported as web-quality signals;
+- sitemap presence is reported but is not an unconditional hard requirement;
+- field/lab/search/AI-visibility evidence is evaluated separately from raw HTML checks.
 
 ## IndexNow submission model
 
@@ -159,6 +170,7 @@ Never put credentials into query strings, report output, or committed config.
 - GitHub Action wrapper exists;
 - IndexNow client, CLI integration, same-host validation, key-file verification, batching and retry behavior have tests;
 - reusable IndexNow GitHub Action exists;
-- common Web Discovery Contract v1 exists and contains no secrets;
+- common Web Discovery Contract v1 exists, declares metric classes/integration state, and contains no secrets;
+- deterministic field/lab metric separation has tests;
 - repository CI runs syntax checks and tests;
 - no organization-wide rollout is merged without explicit owner approval.
