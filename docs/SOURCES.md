@@ -57,3 +57,16 @@ Peerivo GEO uses primary platform guidance as the highest external authority. Th
 - MCP endpoint: https://mcp.aeogeo.site
 
 Current documented model: free `scan_url`; keyed `lint_html`, `lint_text`, `audit_schema`, `fetch_rules`, `search_rules`, `get_changelog`. Peerivo must record the external ruleset/version and must not let a live external update silently change blocking CI behavior.
+
+## Core Web Vitals
+
+- Web Vitals: https://web.dev/articles/vitals
+  - current Core Web Vitals are LCP, INP and CLS;
+  - good field thresholds are LCP <= 2.5 s, INP <= 200 ms, CLS <= 0.1 at the 75th percentile.
+- INP: https://web.dev/articles/inp
+  - INP is a field responsiveness metric; lab diagnostics such as Total Blocking Time may help diagnose responsiveness but are not field INP.
+
+## Schema.org
+
+- Releases: https://schema.org/docs/releases.html
+  - schema vocabulary evolves independently of search-engine feature support; GEO tracks releases but only promotes applicable mechanisms through reviewed rules.
