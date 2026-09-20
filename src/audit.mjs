@@ -1,10 +1,13 @@
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 import {
+  countAlternateLanguages,
+  countImagesWithoutAlt,
   countInternalLinks,
   countTags,
   findLinkHref,
   findMetaContent,
+  findMetaPropertyContent,
   firstTagText,
   htmlLang,
   jsonLdBlocks,
@@ -166,6 +169,10 @@ export async function auditUrl(rawUrl, options = {}) {
   findings.push(finding("GEO-HTTP-001", pageOk ? "pass" : "fail",
     `Final response ${page.response.status}; content-type=${contentType || "unknown"}; final-url=${page.response.url}.`));
 
+  const finalUrl = new URL(page.response.url || targetUrl.href);
+  findings.push(finding("GEO-HTTPS-001", finalUrl.protocol === "https:" ? "pass" : "fail",
+    finalUrl.protocol === "https:" ? "Final public URL uses HTTPS." : `Final public URL uses ${finalUrl.protocol} instead of HTTPS.`));
+
   if (!isHtml) {
     return makeReport(rawUrl, page.response.url || rawUrl, startedAt, findings, { status: page.response.status, contentType });
   }
@@ -181,6 +188,10 @@ export async function auditUrl(rawUrl, options = {}) {
   const description = findMetaContent(page.text, "description");
   findings.push(finding("GEO-META-002", description ? "pass" : "fail", description ? "Meta description is present." : "Meta description is missing."));
 
+  const viewport = findMetaContent(page.text, "viewport");
+  findings.push(finding("GEO-META-003", viewport ? "pass" : "fail",
+    viewport ? "Viewport metadata is present." : "Viewport metadata is missing; mobile rendering may be incorrect."));
+
   const canonical = findLinkHref(page.text, "canonical");
   findings.push(finding("GEO-CANON-001", canonical ? "pass" : "fail", canonical ? `Canonical: ${canonical}` : "Canonical link is not declared."));
 
@@ -194,8 +205,16 @@ export async function auditUrl(rawUrl, options = {}) {
   const internalLinks = countInternalLinks(page.text, page.response.url || targetUrl.href);
   findings.push(finding("GEO-HTML-003", internalLinks > 0 ? "pass" : "fail", `Found ${internalLinks} internal crawlable link(s).`));
 
+  const imagesWithoutAlt = countImagesWithoutAlt(page.text);
+  findings.push(finding("GEO-A11Y-001", imagesWithoutAlt === 0 ? "pass" : "fail",
+    imagesWithoutAlt === 0 ? "No image without non-empty alt text was found." : `Found ${imagesWithoutAlt} image(s) without non-empty alt text.`));
+
   const lang = htmlLang(page.text);
   findings.push(finding("GEO-I18N-001", lang ? "pass" : "fail", lang ? `HTML language: ${lang}` : "The <html> element has no lang attribute."));
+
+  const alternateLanguages = countAlternateLanguages(page.text);
+  findings.push(finding("GEO-I18N-002", alternateLanguages > 0 ? "pass" : "skip",
+    alternateLanguages > 0 ? `Found ${alternateLanguages} hreflang alternate link(s).` : "No hreflang alternate links found; this is expected for single-language pages."));
 
   const jsonLd = validateJsonLd(page.text);
   findings.push(finding("GEO-SCHEMA-001", jsonLd.errors.length === 0 ? "pass" : "fail",
@@ -203,9 +222,20 @@ export async function auditUrl(rawUrl, options = {}) {
   findings.push(finding("GEO-SCHEMA-002", jsonLd.blocks.length > 0 ? "pass" : "skip",
     jsonLd.blocks.length > 0 ? "Structured data is present." : "No JSON-LD found. Structured data is useful when it accurately models the page, but it is not a universal AI-search requirement."));
 
-  findings.push(finding("GEO-LLMS-001", "skip", "llms.txt is intentionally non-blocking; Google states it neither improves nor harms Google Search visibility."));
+  const ogTitle = findMetaPropertyContent(page.text, "og:title");
+  const ogDescription = findMetaPropertyContent(page.text, "og:description");
+  findings.push(finding("GEO-SOCIAL-001", ogTitle && ogDescription ? "pass" : "fail",
+    ogTitle && ogDescription ? "Open Graph title and description are present." : "Open Graph title and/or description is missing."));
 
-  const finalUrl = new URL(page.response.url || targetUrl.href);
+  const csp = page.response.headers.get("content-security-policy");
+  const referrerPolicy = page.response.headers.get("referrer-policy");
+  const hsts = page.response.headers.get("strict-transport-security");
+  findings.push(finding("GEO-SEC-001", csp ? "pass" : "fail", csp ? "Content-Security-Policy header is present." : "Content-Security-Policy header is missing."));
+  findings.push(finding("GEO-SEC-002", referrerPolicy ? "pass" : "fail", referrerPolicy ? "Referrer-Policy header is present." : "Referrer-Policy header is missing."));
+  findings.push(finding("GEO-SEC-003", finalUrl.protocol !== "https:" ? "skip" : (hsts ? "pass" : "fail"),
+    finalUrl.protocol !== "https:" ? "HSTS is not evaluated on a non-HTTPS URL." : (hsts ? "Strict-Transport-Security header is present." : "Strict-Transport-Security header is missing.")));
+
+  findings.push(finding("GEO-LLMS-001", "skip", "llms.txt is intentionally non-blocking; Google states it neither improves nor harms Google Search visibility."));
   const [robots, sitemap] = await Promise.all([
     auditRobots(finalUrl, findings, options),
     auditSitemap(finalUrl, findings, options)
@@ -216,12 +246,17 @@ export async function auditUrl(rawUrl, options = {}) {
     contentType,
     title,
     descriptionPresent: Boolean(description),
+    viewportPresent: Boolean(viewport),
     canonical: canonical || null,
     h1Count,
     htmlLang: lang || null,
+    alternateLanguages,
     visibleTextCharacters: visibleText.length,
     internalLinks,
+    imagesWithoutAlt,
     jsonLdBlocks: jsonLd.blocks.length,
+    openGraph: { titlePresent: Boolean(ogTitle), descriptionPresent: Boolean(ogDescription) },
+    securityHeaders: { csp: Boolean(csp), referrerPolicy: Boolean(referrerPolicy), hsts: Boolean(hsts) },
     robots,
     sitemap
   });
