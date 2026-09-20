@@ -34,7 +34,7 @@ export function countTags(html, tag) {
 export function parseAttributes(tag) {
   const attributes = {};
   const source = tag.replace(/^<[^\s>]+|\/?>(?:\s*)$/g, "");
-  const regex = /([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g;
+  const regex = /([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>\`]+)))?/g;
   for (const match of source.matchAll(regex)) {
     const name = match[1].toLowerCase();
     const value = match[2] ?? match[3] ?? match[4] ?? "";
@@ -55,6 +55,14 @@ export function findMetaContent(html, name) {
   return "";
 }
 
+export function findMetaPropertyContent(html, property) {
+  for (const tag of findTags(html, "meta")) {
+    const attrs = parseAttributes(tag);
+    if ((attrs.property ?? "").toLowerCase() === property.toLowerCase()) return attrs.content ?? "";
+  }
+  return "";
+}
+
 export function findLinkHref(html, rel) {
   for (const tag of findTags(html, "link")) {
     const attrs = parseAttributes(tag);
@@ -62,6 +70,25 @@ export function findLinkHref(html, rel) {
     if (rels.includes(rel.toLowerCase())) return attrs.href ?? "";
   }
   return "";
+}
+
+export function countAlternateLanguages(html) {
+  let count = 0;
+  for (const tag of findTags(html, "link")) {
+    const attrs = parseAttributes(tag);
+    const rels = (attrs.rel ?? "").toLowerCase().split(/\s+/).filter(Boolean);
+    if (rels.includes("alternate") && attrs.hreflang && attrs.href) count += 1;
+  }
+  return count;
+}
+
+export function countImagesWithoutAlt(html) {
+  let count = 0;
+  for (const tag of findTags(html, "img")) {
+    const attrs = parseAttributes(tag);
+    if (!Object.hasOwn(attrs, "alt") || attrs.alt.trim() === "") count += 1;
+  }
+  return count;
 }
 
 export function htmlLang(html) {
