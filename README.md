@@ -1,6 +1,6 @@
 # Peerivo GEO
 
-Deterministic web-discovery / AEO / GEO checks and freshness submission for Peerivo public projects.
+Deterministic web-discovery / SEO / AEO / GEO checks, web-quality evidence, field-metric classification and freshness submission for Peerivo public projects.
 
 The project intentionally separates **eligibility facts** from **AI-visibility heuristics**. It does not promise rankings or citations and it does not blindly convert third-party AEO advice into hard CI gates.
 
@@ -33,7 +33,7 @@ node src/cli.mjs indexnow \
 
 The implementation validates same-host ownership, verifies the public key file by default, deduplicates URLs, chunks requests at the IndexNow limit, accepts `200/202`, and retries bounded `429/5xx` responses.
 
-See `docs/INDEXNOW.md` and `contracts/web-discovery.v1.schema.json`.
+See `docs/INDEXNOW.md`, `docs/METRICS.md`, and `contracts/web-discovery.v1.schema.json`.
 
 ## GitHub Actions
 
