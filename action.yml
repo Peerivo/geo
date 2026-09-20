@@ -1,0 +1,33 @@
+name: Peerivo GEO Web Discovery Audit
+description: Deterministic crawl/index/parse checks for public Peerivo web pages.
+inputs:
+  url:
+    description: Public preview or production URL to audit.
+    required: true
+  json-report:
+    description: JSON report path.
+    required: false
+    default: peerivo-geo.json
+  markdown-report:
+    description: Markdown review artifact path.
+    required: false
+    default: peerivo-geo.md
+  fail-on:
+    description: error, warning, or none.
+    required: false
+    default: error
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - name: Audit web discovery
+      shell: bash
+      run: >-
+        node "$GITHUB_ACTION_PATH/src/cli.mjs" audit
+        --url "${{ inputs.url }}"
+        --json "${{ inputs.json-report }}"
+        --markdown "${{ inputs.markdown-report }}"
+        --fail-on "${{ inputs.fail-on }}"

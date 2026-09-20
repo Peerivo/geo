@@ -1,0 +1,71 @@
+name: Peerivo GEO IndexNow
+description: Submit added, updated, or deleted public URLs through IndexNow.
+inputs:
+  host:
+    description: Canonical host for all submitted URLs, for example example.com.
+    required: true
+  urls:
+    description: Optional newline-separated changed URLs.
+    required: false
+    default: ""
+  url-file:
+    description: Optional file containing one changed URL per line.
+    required: false
+    default: ""
+  key-env:
+    description: Environment variable containing the IndexNow key.
+    required: false
+    default: INDEXNOW_KEY
+  key-location:
+    description: Optional same-host public key file URL.
+    required: false
+    default: ""
+  batch-size:
+    description: URLs per IndexNow request, maximum 10000.
+    required: false
+    default: "10000"
+  max-attempts:
+    description: Maximum attempts for retryable 429/5xx responses.
+    required: false
+    default: "4"
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - name: Submit changed URLs to IndexNow
+      shell: bash
+      env:
+        PEERIVO_INDEXNOW_HOST: ${{ inputs.host }}
+        PEERIVO_INDEXNOW_URLS: ${{ inputs.urls }}
+        PEERIVO_INDEXNOW_URL_FILE: ${{ inputs.url-file }}
+        PEERIVO_INDEXNOW_KEY_ENV: ${{ inputs.key-env }}
+        PEERIVO_INDEXNOW_KEY_LOCATION: ${{ inputs.key-location }}
+        PEERIVO_INDEXNOW_BATCH_SIZE: ${{ inputs.batch-size }}
+        PEERIVO_INDEXNOW_MAX_ATTEMPTS: ${{ inputs.max-attempts }}
+      run: |
+        set -euo pipefail
+        args=(
+          node "$GITHUB_ACTION_PATH/../../../src/cli.mjs" indexnow
+          --host "$PEERIVO_INDEXNOW_HOST"
+          --key-env "$PEERIVO_INDEXNOW_KEY_ENV"
+          --batch-size "$PEERIVO_INDEXNOW_BATCH_SIZE"
+          --max-attempts "$PEERIVO_INDEXNOW_MAX_ATTEMPTS"
+        )
+
+        if [[ -n "$PEERIVO_INDEXNOW_KEY_LOCATION" ]]; then
+          args+=(--key-location "$PEERIVO_INDEXNOW_KEY_LOCATION")
+        fi
+
+        if [[ -n "$PEERIVO_INDEXNOW_URL_FILE" ]]; then
+          args+=(--url-file "$PEERIVO_INDEXNOW_URL_FILE")
+        fi
+
+        while IFS= read -r url; do
+          [[ -z "$url" ]] && continue
+          args+=(--url "$url")
+        done <<< "$PEERIVO_INDEXNOW_URLS"
+
+        "${args[@]}"
